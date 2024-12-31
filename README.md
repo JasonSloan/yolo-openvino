@@ -1,52 +1,93 @@
-# 一. 环境依赖
+## 1. Environment Dependencies
 
-换源(非必要):
-https://mirrors.tuna.tsinghua.edu.cn/help/ubuntu/
+### Switching Package Sources (Optional)
 
-安装openvino
-https://www.intel.com/content/www/us/en/developer/tools/openvino-toolkit/download.html?VERSION=v_2023_3_0&OP_SYSTEM=LINUX&DISTRIBUTION=APT
+Use Tsinghua University mirrors from [here](https://mirrors.tuna.tsinghua.edu.cn/help/ubuntu/)
 
-安装spdlog:
+### Installing OpenVINO
+
+Download OpenVINO Toolkit from [here](https://www.intel.com/content/www/us/en/developer/tools/openvino-toolkit/download.html?VERSION=v_2023_3_0&OP_SYSTEM=LINUX&DISTRIBUTION=APT)
+
+### Installing spdlog
+
+```
 apt-get install libspdlog-dev
+```
 
-将已编译好的opencv-build文件夹拷贝到机器中
+### Adding Pre-Compiled OpenCV
 
-安装24.09.28717.12版本显卡驱动以及runtime:
-https://github.com/intel/compute-runtime/releases
+Copy the pre-compiled opencv folder to your machine.
 
-设置GPU定频(非必要):
-apt-get install intel-gpu-tools
-echo "intel_gpu_frequency -s 1600" >> /usr/local/bin/set_gpu_frequency.sh
-chmod 777 /usr/local/bin/set_gpu_frequency.sh
+If you are using ubuntu, download the pre-built opencv4.2 library directly from [here](https://github.com/JasonSloan/DeepFusion/releases/download/v111/opencv4.2.tar), and put them into the  'yolo-openvino' directory, then set
 
-sudo tee /etc/systemd/system/set_gpu_frequency.service > /dev/null << 'EOF'
-[Unit]
-Description = set_gpu_frequency
-After = network.target syslog.target
-Wants = network.target
-[Service]
-Type = simple
-ExecStart = bash /usr/local/bin/set_gpu_frequency.sh
-[Install]
-WantedBy = multi-user.target
-EOF
+```bash
+export LD_LIBRARY_PATH=/path/to/opencv4.2/lib:$LD_LIBRARY_PATH
+```
 
-systemctl daemon-reload
-systemctl enable set_gpu_frequency.service
-systemctl start set_gpu_frequency.service
+### Installing GPU Driver and Runtime (Version 24.09.28717.12)
 
-# 二. 代码实现
+Download and install the required driver and runtime from [here](https://github.com/intel/compute-runtime/releases) if you are going to use integreted graphics card or discrete graphics card manufactured by Intel as your inference backend.
 
-基于linux版本openvino推理框架的yolov5、yolov8、yolov11的目标检测推理代码实现:
+### Setting GPU to Fixed Frequency (Optional)
 
-* 采用多线程异步推理的模式
-* 通过回调函数返回结果
-* 支持单batch推理、多batch推理
+1. Install Intel GPU tools:
 
+   ```
+   apt-get install intel-gpu-tools
+   ```
 
+2. Create a script to set GPU frequency:
 
-当前仓库中的CMakelists.txt为编译动态库的实现, 调用推理的测试代码见[test-model-infer]()
+   ```
+   echo "intel_gpu_frequency -s 1600" >> /usr/local/bin/set_gpu_frequency.sh
+   chmod 777 /usr/local/bin/set_gpu_frequency.sh
+   ```
 
+3. Create and enable a systemd service:
 
+   ```
+   sudo tee /etc/systemd/system/set_gpu_frequency.service > /dev/null << 'EOF'
+   [Unit]
+   Description=set_gpu_frequency
+   After=network.target syslog.target
+   Wants=network.target
 
-**!!原创代码, 引用请注明出处!!**
+   [Service]
+   Type=simple
+   ExecStart=bash /usr/local/bin/set_gpu_frequency.sh
+
+   [Install]
+   WantedBy=multi-user.target
+   EOF
+
+   systemctl daemon-reload
+   systemctl enable set_gpu_frequency.service
+   systemctl start set_gpu_frequency.service
+   ```
+
+------
+
+## 2. Code Implementation
+
+This repository contains object detection inference code for YOLOv5, YOLOv8, and YOLOv11, based on the Linux version of the OpenVINO inference framework.
+
+### Features
+
+- **Multi-threaded Asynchronous Inference**
+  Inference is performed asynchronously using multiple threads.
+- **Callback Functions for Results**
+  Results are returned through callback functions.
+- **Batch Inference Support**
+  Supports both single-batch and multi-batch inference.
+
+### Notes
+
+- The current `CMakeLists.txt` file is configured to build a dynamic library.
+- Test code for invoking inference can be found in the <test-model-infer> repository.
+
+------
+
+## Attribution
+
+**Original Code**
+If you use this code, please credit the source!
