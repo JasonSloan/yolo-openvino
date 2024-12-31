@@ -83,7 +83,28 @@ This repository contains object detection inference code for YOLOv5, YOLOv8, and
 ### Notes
 
 - The current `CMakeLists.txt` file is configured to build a dynamic library.
+
 - Test code for invoking inference can be found in the <test-model-infer> repository.
+
+- To maintain consistency with YOLOv5, during inference with YOLOv8 or YOLOv11, the model's output dimensions should be [bs, n_grids, n_classes] instead of the official format [bs, nclasses, ngrids]. Therefore, you need to add a line of code to do transpose in the `forward` method of the `Detect` class in the `head.py` file of the official training code.
+
+  ```bash
+  class Detect(nn.Module):
+  	......
+      def forward(self, x):
+          """Concatenates and returns predicted bounding boxes and class probabilities."""
+          if self.end2end:
+              return self.forward_end2end(x)
+
+          for i in range(self.nl):
+              x[i] = torch.cat((self.cv2[i](x[i]), self.cv3[i](x[i])), 1)
+          if self.training:  # Training path
+              return x
+          y = self._inference(x)
+          if self.export and str(self.__class__)[8:-2].split('.')[-1] == 'Detect':
+              y = y.transpose(-1, -2)  # Add this line of code
+          return y if self.export else (y, x)
+  ```
 
 ------
 
